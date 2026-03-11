@@ -327,21 +327,43 @@
 </footer>
 
 <!-- MODAL -->
-<div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+<div class="modal-bg" id="modalBg" onclick="closeModalBg(event)">
   <div class="modal" id="modal">
-    <div class="modal-video">
+    <div class="modal-video" id="modalVideoBox">
       <button class="modal-close" onclick="closeModal()">✕</button>
-      <iframe id="modalIframe"
-        src=""
-        title="YouTube video player"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen>
-      </iframe>
+
+      <!-- Poster / play screen shown before video loads -->
+      <div id="modalPosterWrap" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;" onclick="startPlay()">
+        <img id="modalPosterImg" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6;">
+        <div id="modalPlayCircle" style="position:relative;z-index:2;width:80px;height:80px;border-radius:50%;background:rgba(229,9,20,.85);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;box-shadow:0 0 40px rgba(229,9,20,.5);transition:transform .2s;">▶</div>
+        <div style="position:relative;z-index:2;margin-top:16px;font-size:.9rem;color:rgba(255,255,255,.8);font-weight:500;">Click to Play</div>
+      </div>
+
+      <!-- Actual iframe, inserted only when user clicks play -->
+      <div id="modalIframeWrap" style="position:absolute;inset:0;display:none;"></div>
+
+      <!-- Blocked video fallback -->
+      <div id="modalBlocked" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;gap:18px;text-align:center;padding:30px;">
+        <div style="font-size:3rem;">🚫</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#fff;">Embedding Disabled by Uploader</div>
+        <div style="font-size:.9rem;color:#aaa;max-width:360px;">The video owner has turned off embedding for this video. You can still watch it directly on YouTube.</div>
+        <a id="modalYTLink" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:#ff0000;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;font-size:1rem;transition:background .2s;">
+          ▶ Watch on YouTube
+        </a>
+      </div>
     </div>
+
     <div class="modal-body">
-      <div class="modal-title" id="modalTitle">Title</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div class="modal-title" id="modalTitle">Loading…</div>
+          <div style="font-size:.85rem;color:#4caf50;font-weight:600;margin-bottom:8px;" id="modalMeta">HD • Chitrapat Original</div>
+        </div>
+        <a id="modalExtLink" href="#" target="_blank" rel="noopener"
+           style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:8px 16px;border-radius:6px;font-size:.82rem;white-space:nowrap;transition:background .2s;">
+          ↗ YouTube
+        </a>
+      </div>
       <div class="modal-desc" id="modalDesc">Watch this amazing title on Chitrapat.</div>
     </div>
   </div>
@@ -349,16 +371,16 @@
 
 <script>
 const ALL_IDS = [
-  'fmcp3ayUsf0','PjV7XYQAyGU','DrxMBFcZY94','UiTOvAQV9AA','rn52mrvgpOo',
-  '218i5d9fJ1k','_XP4FAsukyk','mJ8cGXi3NoY','3iC2kq_YimM','HZ9rmNDHMKg',
-  'H3dQIuU0MjQ','G-_seXjLdhk','0KDB4HDjkQE','KhVD9KqxM0U','OomPEftSHHk',
-  'wkS49Pf5wbw','wixizJ5HCj4','nFjotwyci94','GYJeCObuuB0','uKUEOykiKrY',
-  'OrfYe3Xki1M','xwnloQaTo0k','KlUNVckBCFY','ZE8TCvFQVFI','PfoGXVKBimw',
-  'Y8cfPG8b5g8','1PaIcU1Ja5o','MRA4-McqlO4','rXJzIAxR6Ys','2haqoZY50AA',
-  'qNDiER_4p5M','L--7ZImfLKw','qRbmVfvZU8E','XTMyE-vsVe8','2-RwWGs_3fQ',
-  '8ojtwu8IbZM','skGyB9vIb5s','356a2JjUqW8','hFmJTE1WpyU','adlPT8BgtDY',
-  'QZv5jDlJ-5I','7kRlzKvQvdk','rlQHKn4qEuU','CSyirlF4X60','PlHJk3UBFzI',
-  'bGq6TVLo4-s','g3-qkhHDNC4','Rq3HBUbHPOg','6FCP_QmaxSI','RTKLNX8QhyM'
+  'fmkS85mNZWA','vGAlyVISGdY','C5Fai9f41zg','wgaiwDwkFv8','mYcjf8JyTUY',
+  '37lE2fcE1tc','n8oJicFVuGA','4-6nDNMQIaU','FkxPhdo5hl0','ObRnSM7oSt0',
+  'vgFwmX_s4Jw','UnsCT66FEoY','AoEJkw7Cnug','My62uesZyHI','qW-1IrhLjNo',
+  'i1fGsaNxd7w','ggwmg63iYh4','8iW9qeJaE4I','fmcp3ayUsf0','UiTOvAQV9AA',
+  'rn52mrvgpOo','218i5d9fJ1k','mJ8cGXi3NoY','HZ9rmNDHMKg','H3dQIuU0MjQ',
+  'G-_seXjLdhk','0KDB4HDjkQE','KhVD9KqxM0U','OomPEftSHHk','wixizJ5HCj4',
+  'nFjotwyci94','GYJeCObuuB0','OrfYe3Xki1M','xwnloQaTo0k','KlUNVckBCFY',
+  'ZE8TCvFQVFI','PfoGXVKBimw','Y8cfPG8b5g8','MRA4-McqlO4','rXJzIAxR6Ys',
+  '2haqoZY50AA','6j2QySqaEtw','qNDiER_4p5M','L--7ZImfLKw','qRbmVfvZU8E',
+  'XTMyE-vsVe8','8ojtwu8IbZM','356a2JjUqW8','hFmJTE1WpyU','adlPT8BgtDY'
 ];
 
 const ROWS = [
@@ -370,9 +392,25 @@ const ROWS = [
   { title: '🌟 New Arrivals',   ids: ALL_IDS.slice(40, 50) },
 ];
 
-// Use YouTube thumbnail as poster image
+// Cache for video titles fetched via oEmbed
+const titleCache = {};
+
 function thumbUrl(id) {
   return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+}
+
+// Fetch real title from YouTube oEmbed (no API key needed)
+async function fetchTitle(id) {
+  if (titleCache[id]) return titleCache[id];
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    titleCache[id] = d.title;
+    return d.title;
+  } catch {
+    return null;
+  }
 }
 
 function buildRows() {
@@ -380,59 +418,135 @@ function buildRows() {
   ROWS.forEach(row => {
     const section = document.createElement('section');
     section.className = 'row';
-
     section.innerHTML = `
       <div class="row-title">${row.title}</div>
       <div class="slider-wrap">
-        <button class="arrow left" onclick="scroll(this,-1)">‹</button>
-        <div class="slider" id="slider-${row.title.replace(/\W/g,'')}">
+        <button class="arrow left" onclick="scrollRow(this,-1)">‹</button>
+        <div class="slider">
           ${row.ids.map((id,i) => `
-            <div class="card" onclick="openModal('${id}','Movie ${i+1}')">
-              <img src="${thumbUrl(id)}" alt="thumb" loading="lazy" onerror="this.style.opacity='.3'">
+            <div class="card" id="card-${id}" onclick="openModal('${id}')">
+              <img src="${thumbUrl(id)}" alt="thumb" loading="lazy" onerror="this.style.opacity='.25'">
               <div class="card-overlay">
                 <div class="card-actions">
                   <div class="c-btn play">▶</div>
                   <div class="c-btn">+</div>
                   <div class="c-btn">👍</div>
                 </div>
-                <div class="card-title">Movie ${i+1}</div>
-                <div class="card-meta">98% Match</div>
+                <div class="card-title" id="ct-${id}">Loading…</div>
+                <div class="card-meta">HD Available</div>
               </div>
             </div>`).join('')}
         </div>
-        <button class="arrow right" onclick="scroll(this,1)">›</button>
+        <button class="arrow right" onclick="scrollRow(this,1)">›</button>
       </div>`;
-
     main.appendChild(section);
+
+    // Lazy-load titles for cards in this row
+    row.ids.forEach(id => {
+      fetchTitle(id).then(t => {
+        const el = document.getElementById('ct-' + id);
+        if (el && t) el.textContent = t;
+      });
+    });
   });
 }
 
-function scroll(btn, dir) {
-  const wrap = btn.closest('.slider-wrap');
-  const slider = wrap.querySelector('.slider');
+function scrollRow(btn, dir) {
+  const slider = btn.closest('.slider-wrap').querySelector('.slider');
   slider.scrollBy({ left: dir * 800, behavior: 'smooth' });
 }
 
-let currentVideoId = '';
+/* ── MODAL ── */
+let currentId = '';
 
-function openModal(id, title) {
-  currentVideoId = id;
-  document.getElementById('modalIframe').src =
-    `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
-  document.getElementById('modalTitle').textContent = title;
+async function openModal(id) {
+  currentId = id;
+
+  // Reset state
+  document.getElementById('modalPosterWrap').style.display = 'flex';
+  document.getElementById('modalIframeWrap').style.display = 'none';
+  document.getElementById('modalIframeWrap').innerHTML = '';
+  document.getElementById('modalBlocked').style.display = 'none';
+
+  // Poster
+  document.getElementById('modalPosterImg').src = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+
+  // YT links
+  const ytUrl = `https://www.youtube.com/watch?v=${id}`;
+  document.getElementById('modalExtLink').href = ytUrl;
+  document.getElementById('modalYTLink').href = ytUrl;
+
+  // Title
+  document.getElementById('modalTitle').textContent = 'Loading…';
   document.getElementById('modalBg').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  const title = await fetchTitle(id);
+  document.getElementById('modalTitle').textContent = title || 'Chitrapat Movie';
+  document.getElementById('modalDesc').textContent = title
+    ? `Now streaming on Chitrapat: ${title}`
+    : 'Watch this amazing title on Chitrapat.';
 }
 
-function openYouTube() {}
+function startPlay() {
+  const id = currentId;
+  const wrap = document.getElementById('modalIframeWrap');
+  const poster = document.getElementById('modalPosterWrap');
+  const blocked = document.getElementById('modalBlocked');
 
-function playVideo() {}
+  // Show iframe
+  poster.style.display = 'none';
+  wrap.style.display = 'block';
 
-function closeModal(e) {
-  if (e && e.target !== document.getElementById('modalBg')) return;
-  document.getElementById('modalIframe').src = '';
+  const iframe = document.createElement('iframe');
+  iframe.width = '100%';
+  iframe.height = '100%';
+  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+  iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
+  iframe.title = 'YouTube video player';
+  iframe.frameBorder = '0';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+  iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  iframe.allowFullscreen = true;
+
+  // Detect if blocked: if iframe fires error or stays blank after 5s
+  iframe.addEventListener('load', () => {
+    // Try to check if blocked by watching for postMessage from YT
+    // We wait 4 seconds — if no 'onReady' from YT, show blocked notice
+    const timer = setTimeout(() => {
+      // Only show blocked if iframe src still same (not already unmounted)
+      if (wrap.contains(iframe)) {
+        wrap.style.display = 'none';
+        blocked.style.display = 'flex';
+      }
+    }, 5000);
+
+    // Listen for YouTube iframe API ready event = embeddable
+    window.addEventListener('message', function handler(e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === 'onReady' || data.event === 'infoDelivery') {
+          clearTimeout(timer);
+          window.removeEventListener('message', handler);
+        }
+      } catch {}
+    });
+  });
+
+  wrap.appendChild(iframe);
+}
+
+function closeModal() {
+  document.getElementById('modalIframeWrap').innerHTML = '';
+  document.getElementById('modalIframeWrap').style.display = 'none';
+  document.getElementById('modalPosterWrap').style.display = 'flex';
+  document.getElementById('modalBlocked').style.display = 'none';
   document.getElementById('modalBg').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+function closeModalBg(e) {
+  if (e.target === document.getElementById('modalBg')) closeModal();
 }
 
 buildRows();
