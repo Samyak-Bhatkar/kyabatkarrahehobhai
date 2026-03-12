@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Chitrapat</title>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --red: #e50914; 
+    --red: #e50914;
     --gold: #f5c518;
     --dark: #0a0a0a;
     --card-bg: #141414;
@@ -300,9 +301,10 @@
 <section class="hero">
   <div class="hero-video-wrap">
     <iframe id="heroIframe"
-      src="https://www.youtube.com/embed/pQN-pnXPaVg?autoplay=1&mute=1&loop=1&playlist=pQN-pnXPaVg&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
+      src="https://www.youtube-nocookie.com/embed/pQN-pnXPaVg?autoplay=1&mute=1&loop=1&playlist=pQN-pnXPaVg&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
       title="Hero"
       allow="autoplay; encrypted-media"
+      referrerpolicy="strict-origin-when-cross-origin"
       allowfullscreen></iframe>
   </div>
   <div class="hero-overlay"></div>
@@ -492,46 +494,20 @@ function startPlay() {
   const id = currentId;
   const wrap = document.getElementById('modalIframeWrap');
   const poster = document.getElementById('modalPosterWrap');
-  const blocked = document.getElementById('modalBlocked');
 
-  // Show iframe
   poster.style.display = 'none';
   wrap.style.display = 'block';
+  wrap.innerHTML = '';
 
   const iframe = document.createElement('iframe');
-  iframe.width = '100%';
-  iframe.height = '100%';
+  iframe.id = 'ytplayer';
   iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
-  iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
-  iframe.title = 'YouTube video player';
-  iframe.frameBorder = '0';
+  // ✅ Use youtube-nocookie.com (privacy-enhanced, fewer restrictions)
+  // ✅ No autoplay — user already clicked, browser allows it
+  iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&controls=1&autoplay=1`;
   iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
   iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
   iframe.allowFullscreen = true;
-
-  // Detect if blocked: if iframe fires error or stays blank after 5s
-  iframe.addEventListener('load', () => {
-    // Try to check if blocked by watching for postMessage from YT
-    // We wait 4 seconds — if no 'onReady' from YT, show blocked notice
-    const timer = setTimeout(() => {
-      // Only show blocked if iframe src still same (not already unmounted)
-      if (wrap.contains(iframe)) {
-        wrap.style.display = 'none';
-        blocked.style.display = 'flex';
-      }
-    }, 5000);
-
-    // Listen for YouTube iframe API ready event = embeddable
-    window.addEventListener('message', function handler(e) {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.event === 'onReady' || data.event === 'infoDelivery') {
-          clearTimeout(timer);
-          window.removeEventListener('message', handler);
-        }
-      } catch {}
-    });
-  });
 
   wrap.appendChild(iframe);
 }
